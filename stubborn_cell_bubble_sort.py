@@ -1,18 +1,21 @@
 from typing import Sequence, Union
 import random
 
-random.seed(1)
+random.seed(3)
 
 
-class Cell:
-    def __init__(self, value: float):
+class CellWithStubborn:
+    def __init__(self, value: float, stubborn: bool = False):
         self.value: float = value
-        self.prev: Cell | None = None
-        self.next: Cell | None = None
+        self.stubborn = stubborn
+        self.prev: CellWithStubborn | None = None
+        self.next: CellWithStubborn | None = None
 
     def should_swap_next(self) -> bool:
         if not self.next:
             return False
+        if self.stubborn:
+            return False  # guessing here
         return self.value > self.next.value
 
     def swap_with_next(self) -> bool:
@@ -45,7 +48,7 @@ class Cell:
 
 class CellTissue:
     def __init__(self, values: Sequence[Union[int, float]]):
-        cells: list[Cell] = [Cell(val) for val in values]
+        cells: list[CellWithStubborn] = [CellWithStubborn(val) for val in values]
 
         for i in range(len(cells)):
             if i > 0:
@@ -56,7 +59,7 @@ class CellTissue:
         self.head = cells[0]
         self.size = len(cells)
 
-    def get_cell_at(self, index: int) -> Cell | None:
+    def get_cell_at(self, index: int) -> CellWithStubborn | None:
         """Return the cell at a given distance from the linked-list's head."""
 
         current = self.head
@@ -120,10 +123,18 @@ class CellTissue:
 
 
 def demo():
-    values = [3, 1, 12, 9]
+    values = [3, 1, 12, 9, 8, 100, 6, 111, 2, 10, 7, -4, -100, 5, 4, -1000, 17]
+    # values = [1, 3, 8, 9, 12, 100, -4, -1000, -100, 2, 4, 5, 6, 7, 10, 17, 111]
+    print(f"len(values): {len(values)}")
+    # values = [random.randint(1, 100) for _ in range(13)]
     print(f"Initial values: {values}")
-    # values = [random.randint(1, 100) for _ in range(12)]
     tissue = CellTissue(values)
+    cell1 = tissue.get_cell_at(5)
+    cell2 = tissue.get_cell_at(11)
+    if cell1 and cell2:
+        print(f"stubborn cell.values: {cell1.value}, {cell2.value}")
+        cell1.stubborn = True
+        cell2.stubborn = True
     tissue.sort(verbose=True)
 
 

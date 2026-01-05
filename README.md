@@ -1,4 +1,4 @@
-# Decentralized Cell Sorting
+# Claude's Decentralized Cell Sorting README
 
 Implementation of Michael Levin's concept of "basal intelligence" in sorting algorithms, where each element (cell) in the array has autonomous decision-making capability.
 

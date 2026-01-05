@@ -10,7 +10,7 @@ class Cell:
         self.prev: Cell | None = None
         self.next: Cell | None = None
 
-    def should_swap_next(self):
+    def should_swap_next(self) -> bool:
         if not self.next:
             return False
         return self.value > self.next.value
@@ -57,6 +57,8 @@ class CellTissue:
         self.size = len(cells)
 
     def get_cell_at(self, index: int) -> Cell | None:
+        """Return the cell at a given distance from the linked-list's head."""
+
         current = self.head
         for _ in range(index):
             if not current:
@@ -66,6 +68,8 @@ class CellTissue:
         return current
 
     def to_list(self) -> Sequence[Union[int, float]]:
+        """Convert the linked-list to a list of values."""
+
         result = []
         current = self.head
         while current:
@@ -85,9 +89,10 @@ class CellTissue:
                     self.head = current.next
                 current.swap_with_next()
                 swapped = True
-                current = current.next
+                # don't update current here, current.next has been updated to
+                # point to the next node in swap_with_next()
             else:
-                current = current.next
+                current = current.next  # didn't swap, so update current.next
 
         return swapped
 
@@ -98,7 +103,7 @@ class CellTissue:
 
         for i in range(max_iterations):
             if not self.sort_step():
-                iterations = i + 1
+                iterations = i  # + 1
                 if verbose:
                     print(f"Final: {self.to_list()}")
                     print(f"Sorted in {iterations} iterations")
@@ -115,18 +120,12 @@ class CellTissue:
 
 
 def demo():
-    values = [4, 2, 124, 3]
+    values = [10, 9, 8, 7]
+    print(f"Initial values: {values}")
+    # values = [random.randint(1, 100) for _ in range(12)]
     tissue = CellTissue(values)
     tissue.sort(verbose=True)
 
 
-values = [random.randint(1, 100) for _ in range(12)]
-tissue = CellTissue(values)
-for i in range(10):
-    tissue.sort(verbose=True, max_iterations=1)
-    fourth_cell = tissue.get_cell_at(3)
-    if fourth_cell:
-        print(f"First cell value: {fourth_cell.value}")
-
-# if __name__ == "__main__":
-#     demo()
+if __name__ == "__main__":
+    demo()

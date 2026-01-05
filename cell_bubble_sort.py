@@ -1,219 +1,132 @@
-"""
-Decentralized Bubble Sort Implementation
-Based on Michael Levin's research on basal intelligence in algorithms.
+from typing import Sequence, Union
+import random
 
-Each "cell" in the array has its own agency to decide whether to swap
-with its neighbor, implementing a distributed sorting algorithm.
-"""
+random.seed(1)
 
 
 class Cell:
-    """
-    A cell in a 1D tissue array that can autonomously decide to swap
-    with its right neighbor based on local comparison rules.
-    """
+    def __init__(self, value: float):
+        self.value: float = value
+        self.prev: Cell | None = None
+        self.next: Cell | None = None
 
-    def __init__(self, value):
-        self.value = value
-        self.left_neighbor: Cell | None = None
-        self.right_neighbor: Cell | None = None
-
-    def should_swap_right(self):
-        """
-        Decision function: Should this cell swap with its right neighbor?
-        This is the cell's 'intelligence' - it can make local decisions.
-        """
-        if not self.right_neighbor:
+    def should_swap_next(self):
+        if not self.next:
             return False
-        return self.value > self.right_neighbor.value
+        return self.value > self.next.value
 
-    def swap_with_right(self):
-        """
-        Execute a swap with the right neighbor by updating the linked list pointers.
-        This is the cell's 'action' - it can modify its own connections.
-        """
-        if not self.right_neighbor:
+    def swap_with_next(self) -> bool:
+        if not self.next:
             return False
 
-        right = self.right_neighbor
+        # Cell to be swapped with
+        next_to_self = self.next
 
-        # Save the neighbors beyond the swap pair
-        left_of_self = self.left_neighbor
-        right_of_right = right.right_neighbor
+        # outer neighbors: Cells whose prev or next is affected by the swap
+        next_to_next = next_to_self.next
+        prev_to_self = self.prev
 
-        # Update the outer neighbors to point to the swapped cells
-        if left_of_self:
-            left_of_self.right_neighbor = right
-        if right_of_right:
-            right_of_right.left_neighbor = self
+        # update prev/next of outer neighbors
+        if prev_to_self:
+            prev_to_self.next = next_to_self
+        if next_to_next:
+            next_to_next.prev = self
 
-        # Swap the cells' positions
-        right.left_neighbor = left_of_self
-        right.right_neighbor = self
-        self.left_neighbor = right
-        self.right_neighbor = right_of_right
+        # update next
+        next_to_self.prev = prev_to_self
+        next_to_self.next = self
+
+        # update self
+        self.prev = next_to_self
+        self.next = next_to_next
 
         return True
 
 
 class CellTissue:
-    """
-    A 1D tissue array that manages a collection of cells.
-    The tissue provides the infrastructure, but cells make their own decisions.
-    """
+    def __init__(self, values: Sequence[Union[int, float]]):
+        cells: list[Cell] = [Cell(val) for val in values]
 
-    def __init__(self, values):
-        """Initialize the tissue with a list of values."""
-        if not values:
-            self.head = None
-            self.size = 0
-            return
-
-        # Create cells
-        cells = [Cell(val) for val in values]
-
-        # Link them together
         for i in range(len(cells)):
             if i > 0:
-                cells[i].left_neighbor = cells[i - 1]
+                cells[i].prev = cells[i - 1]
             if i < len(cells) - 1:
-                cells[i].right_neighbor = cells[i + 1]
+                cells[i].next = cells[i + 1]
 
         self.head = cells[0]
         self.size = len(cells)
 
-    def get_cell_at(self, index):
-        """Get the cell at a specific index (for visualization/debugging)."""
+    def get_cell_at(self, index: int) -> Cell | None:
         current = self.head
         for _ in range(index):
             if not current:
                 return None
-            current = current.right_neighbor
+            current = current.next
+
         return current
 
-    def to_list(self):
-        """Convert the linked list to a Python list for easy viewing."""
+    def to_list(self) -> Sequence[Union[int, float]]:
         result = []
         current = self.head
         while current:
             result.append(current.value)
-            current = current.right_neighbor
+            current = current.next
+
         return result
 
-    def sort_step(self):
-        """
-        Execute one pass of the bubble sort.
-        Each cell checks if it should swap with its right neighbor.
-        Returns True if any swaps occurred.
-        """
+    def sort_step(self) -> bool:
+        """Execute one pass of bubble sort."""
         swapped = False
         current = self.head
 
-        while current and current.right_neighbor:
-            if current.should_swap_right():
-                # If this cell swaps, we need to update head if necessary
+        while current and current.next:
+            if current.should_swap_next():
                 if current == self.head:
-                    self.head = current.right_neighbor
-
-                current.swap_with_right()
+                    self.head = current.next
+                current.swap_with_next()
                 swapped = True
-                # After swap, current is now to the right of where it was,
-                # so we move to the next cell (which is now current.right_neighbor)
-                current = current.right_neighbor
+                current = current.next
             else:
-                # No swap, just move to next cell
-                current = current.right_neighbor
+                current = current.next
 
         return swapped
 
-    def sort(self, max_iterations=None, verbose=False):
-        """
-        Sort the tissue by repeatedly letting cells make local decisions.
-
-        Args:
-            max_iterations: Maximum number of passes (None for unlimited)
-            verbose: Print each step if True
-
-        Returns:
-            Number of iterations taken
-        """
-        if max_iterations is None:
-            max_iterations = self.size**2  # Upper bound for bubble sort
-
+    def sort(self, max_iterations: int | None = None, verbose: bool = False) -> int:
+        if not max_iterations:
+            max_iterations = self.size**2  # upper bounds for bubble sort
         iterations = 0
 
         for i in range(max_iterations):
-            if verbose:
-                print(f"Step {i}: {self.to_list()}")
-
             if not self.sort_step():
-                # No swaps occurred, we're done
                 iterations = i + 1
                 if verbose:
                     print(f"Final: {self.to_list()}")
                     print(f"Sorted in {iterations} iterations")
-                break
+                    break
+
+            if verbose:
+                print(f"Step {i}: {self.to_list()}")
+
             iterations = i + 1
-        else:
+        else:  # Python for/else (executed if for loop never hits the break statement)
             if verbose:
                 print(f"Reached max iterations ({max_iterations})")
-
         return iterations
 
 
-def demonstrate_cell_sorting():
-    """Demonstrate the decentralized bubble sort."""
-
-    print("=" * 60)
-    print("DECENTRALIZED BUBBLE SORT")
-    print("Each cell autonomously decides whether to swap")
-    print("=" * 60)
-    print()
-
-    # Example 1: Small array
-    print("Example 1: Small array")
-    print("-" * 40)
-    values = [64, 34, 25, 12, 22, 11, 90]
-    print(f"Initial: {values}")
-
+def demo():
+    values = [4, 2, 124, 3]
     tissue = CellTissue(values)
-    iterations = tissue.sort(verbose=True)
-    print()
-
-    # Example 2: Reverse sorted
-    print("\nExample 2: Reverse sorted array")
-    print("-" * 40)
-    values = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-    print(f"Initial: {values}")
-
-    tissue = CellTissue(values)
-    iterations = tissue.sort(verbose=True)
-    print()
-
-    # Example 3: Already sorted
-    print("\nExample 3: Already sorted")
-    print("-" * 40)
-    values = [1, 2, 3, 4, 5]
-    print(f"Initial: {values}")
-
-    tissue = CellTissue(values)
-    iterations = tissue.sort(verbose=True)
-    print()
-
-    # Example 4: Random values
-    print("\nExample 4: Random values")
-    print("-" * 40)
-    import random
-
-    values = [random.randint(1, 100) for _ in range(15)]
-    print(f"Initial: {values}")
-
-    tissue = CellTissue(values)
-    iterations = tissue.sort()
-    print(f"Final: {tissue.to_list()}")
-    print(f"Sorted in {iterations} iterations")
-    print()
+    tissue.sort(verbose=True)
 
 
-if __name__ == "__main__":
-    demonstrate_cell_sorting()
+values = [random.randint(1, 100) for _ in range(12)]
+tissue = CellTissue(values)
+for i in range(10):
+    tissue.sort(verbose=True, max_iterations=1)
+    fourth_cell = tissue.get_cell_at(3)
+    if fourth_cell:
+        print(f"First cell value: {fourth_cell.value}")
+
+# if __name__ == "__main__":
+#     demo()

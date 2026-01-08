@@ -42,7 +42,17 @@ class ThreadedCell(threading.Thread):
             finally:
                 self.lock.release()  # Always release lock
 
-            time.sleep(0.01)  # Brief pause to let other threads run
+            time.sleep(0.1)  # Brief pause to let other threads run
+
+    def run_bak(self):
+        direction = random.choice([-1, 1])
+        neighbor_index = self.index + direction
+        if self.should_swap_with(neighbor_index):
+            neighbor = self.cells[neighbor_index]
+            self.cells[self.index], self.cells[neighbor_index] = neighbor, self
+            self.index, neighbor.index = neighbor.index, self.index
+
+        time.sleep(0.1)
 
     def stop(self):
         self.active = False
@@ -90,23 +100,23 @@ def demo_parallel():
     tissue = ParallelCellTissue(values)
 
     # Make index 5 stubborn
-    tissue.cells[5].stubborn = True
-
+    # tissue.cells[5].stubborn = True
+    #
     print(f"Initial: {tissue.get_values()}")
-
+    #
     tissue.start_sorting()
-
-    # Monitor progress
-    for i in range(20):
-        time.sleep(0.5)
-        current = tissue.get_values()
-        print(f"Step {i}: {current}")
-        if tissue.is_sorted():
-            print("Sorted!")
-            break
-
-    tissue.stop_sorting()
-    print(f"Final: {tissue.get_values()}")
+    #
+    # # Monitor progress
+    # for i in range(20):
+    #     time.sleep(0.5)
+    #     current = tissue.get_values()
+    #     print(f"Step {i}: {current}")
+    #     if tissue.is_sorted():
+    #         print("Sorted!")
+    #         break
+    #
+    # tissue.stop_sorting()
+    # print(f"Final: {tissue.get_values()}")
 
 
 if __name__ == "__main__":
